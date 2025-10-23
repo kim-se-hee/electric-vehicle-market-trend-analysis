@@ -8,7 +8,7 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 from langchain.schema import Document
-from config.settings import settings
+from common.config.settings import settings
 import logging
 
 

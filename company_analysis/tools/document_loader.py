@@ -7,7 +7,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
-from config.settings import settings
+from common.config.settings import settings
 import logging
 
 
