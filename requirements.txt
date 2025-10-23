@@ -1,0 +1,26 @@
+# Core LangChain
+langchain>=0.1.0,<0.3.0
+langchain-core>=0.1.7,<0.3.0
+langchain-community>=0.0.20,<0.3.0
+langchain-openai>=0.0.5,<0.2.0
+
+# OpenAI
+openai>=1.12.0
+
+# Search & Web Tools
+tavily-python==0.3.3
+beautifulsoup4==4.12.3
+lxml==5.1.0
+html2text==2024.2.26
+
+# Data Models
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+# Async & HTTP
+aiohttp==3.9.3
+httpx==0.26.0
+requests==2.31.0
+
+# Utilities
+python-dotenv==1.0.1
