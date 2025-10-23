@@ -22,7 +22,7 @@ class CompanyAnalyzerAgent(BaseAgent):
         기업 분석 실행
         
         Args:
-            state: 현재 상태 (market_research에서 기업 리스트 가져옴)
+            state: 현재 상태 (market_research에서 기업 리스트 및 문서 가져옴)
             
         Returns:
             업데이트된 상태
@@ -34,11 +34,17 @@ class CompanyAnalyzerAgent(BaseAgent):
             companies = self._get_target_companies(state)
             self.logger.info(f"📋 분석 대상 기업: {', '.join(companies)}")
             
-            # 각 기업별 문서 수집 및 RAG 시스템 구축
-            self.logger.info("\n📥 기업 문서 수집 중...")
-            documents = self.doc_loader.load_company_documents(companies)
+            # State에서 문서 가져오기 시도
+            documents = self._get_documents_from_state(state)
             
-            self.logger.info(f"✅ 총 {len(documents)}개 문서 수집 완료")
+            if not documents:
+                # State에 문서가 없으면 직접 수집
+                self.logger.info("\n📥 State에 문서 없음. 기업 문서 수집 중...")
+                documents = self.doc_loader.load_company_documents(companies)
+                self.logger.info(f"✅ 총 {len(documents)}개 문서 수집 완료")
+            else:
+                self.logger.info(f"✅ State에서 {len(documents)}개 문서 가져옴")
+            
             self.logger.info(f"🔧 벡터 DB 구축 중...")
             self.rag_tool.build_vectorstore(documents)
             
@@ -56,6 +62,8 @@ class CompanyAnalyzerAgent(BaseAgent):
             
             # 메시지 추가
             summary = self._create_summary(company_analyses)
+            if "messages" not in state:
+                state["messages"] = []
             state["messages"].append(
                 AIMessage(content=f"기업 분석 완료:\n{summary}")
             )
@@ -71,14 +79,25 @@ class CompanyAnalyzerAgent(BaseAgent):
         분석 대상 기업 리스트 추출
         
         우선순위:
-        1. user_request에서 명시적으로 지정된 기업
-        2. market_research에서 발견된 주요 기업
+        1. State의 companies 필드 (Market Researcher가 저장한 것)
+        2. market_research의 key_companies
         3. 기본 기업 리스트
         """
-        # 사용자가 명시적으로 요청한 기업이 있는지 확인
-        user_request = state.get("user_request", "").lower()
+        # 1순위: State에 직접 저장된 companies
+        companies_from_state = state.get("companies", [])
+        if companies_from_state:
+            self.logger.info(f"✅ State에서 기업 리스트 발견: {companies_from_state}")
+            return companies_from_state[:5]  # 최대 5개
         
-        # 기본 주요 기업 리스트
+        # 2순위: market_research 안의 key_companies
+        market_research = state.get("market_research", {})
+        key_companies = market_research.get("key_companies", [])
+        if key_companies:
+            self.logger.info(f"✅ market_research에서 기업 리스트 발견: {key_companies}")
+            return key_companies[:5]
+        
+        # 3순위: 기본 리스트
+        self.logger.warning("⚠️ State에 기업 리스트 없음. 기본 리스트 사용")
         default_companies = [
             "Tesla",
             "BYD", 
@@ -86,15 +105,52 @@ class CompanyAnalyzerAgent(BaseAgent):
             "LG Energy Solution",
             "CATL"
         ]
-        
-        # market_research에서 언급된 기업 추출 (있다면)
-        market_research = state.get("market_research", {})
-        mentioned_companies = market_research.get("major_players", [])
-        
-        if mentioned_companies:
-            return mentioned_companies[:5]  # 최대 5개
-        
         return default_companies
+    
+    def _get_documents_from_state(self, state: Dict[str, Any]) -> List:
+        """
+        State에서 문서 가져오기
+        
+        Market Researcher가 수집한 문서를 재사용
+        """
+        from langchain.schema import Document
+        
+        documents = []
+        
+        # 1. market_research의 summary를 Document로 변환
+        market_research = state.get("market_research", {})
+        if market_research:
+            summary = market_research.get("summary", "")
+            if summary:
+                doc = Document(
+                    page_content=summary,
+                    metadata={
+                        "source": "market_research_summary",
+                        "type": "market_overview"
+                    }
+                )
+                documents.append(doc)
+            
+            # key_trends도 텍스트로 변환
+            key_trends = market_research.get("key_trends", [])
+            if key_trends:
+                trends_text = "\n\n".join([
+                    f"트렌드: {t.get('title', '')}\n설명: {t.get('description', '')}"
+                    for t in key_trends
+                ])
+                doc = Document(
+                    page_content=trends_text,
+                    metadata={
+                        "source": "market_research_trends",
+                        "type": "trends"
+                    }
+                )
+                documents.append(doc)
+        
+        # 2. references (URL 리스트)는 현재 content가 없으므로 스킵
+        # 나중에 DocumentLoader에서 다시 가져옴
+        
+        return documents
     
     def _analyze_company(self, company: str) -> Dict[str, Any]:
         """

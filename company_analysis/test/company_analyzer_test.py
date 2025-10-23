@@ -1,16 +1,17 @@
 """
 Company Analyzer Agent 테스트 스크립트
+Market Researcher의 결과를 받아서 기업 분석 수행
 """
 import sys
 from pathlib import Path
 
-# 프로젝트 루트를 Python path에 추가
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
 load_dotenv()
 
+from market_research.agent.market_researcher import MarketResearcherAgent
 from company_analysis.agent.company_analyzer import CompanyAnalyzerAgent
 import json
 
@@ -18,39 +19,52 @@ import json
 def main():
     """메인 실행 함수"""
     print("=" * 60)
-    print("🏢 기업 분석 에이전트 테스트")
+    print("🔗 통합 테스트: Market Research → Company Analysis")
     print("=" * 60)
     
-    # 에이전트 초기화
-    agent = CompanyAnalyzerAgent()
+    print("\n" + "="*60)
+    print("STEP 1: 시장 조사")
+    print("="*60)
     
-    # 초기 상태 설정 (Market Research 완료 후 상태를 시뮬레이션)
+    market_agent = MarketResearcherAgent()
+    
     initial_state = {
-        "user_request": "전기차 주요 기업 분석해줘",
+        "user_request": "전기차 시장 동향과 주요 기업 분석해줘",
         "messages": [],
-        "market_research": {
-            "major_players": [
-                "Tesla",
-                "BYD",
-                "Samsung SDI"
-            ]
-        },
-        "market_research_done": True
+        "references": [],
+        "companies": []
     }
     
-    print("\n📋 분석 대상:", ", ".join(initial_state["market_research"]["major_players"]))
-    print("\n🔍 기업 분석 시작...\n")
+    print(f"\n📋 사용자 요청: {initial_state['user_request']}")
+    print("\n🔍 Market Research 시작...\n")
     
-    # 에이전트 실행
     try:
-        result = agent.run(initial_state)
+        state_after_market = market_agent.run(initial_state)
+        
+        print("\n✅ Market Research 완료!")
+        
+        market_data = state_after_market.get("market_research", {})
+        companies = state_after_market.get("companies", [])
+        
+        print(f"\n📊 발견된 주요 기업 (State): {companies}")
+        print(f"📊 발견된 주요 기업 (market_research): {market_data.get('key_companies', [])}")
+        print(f"📚 수집한 참고자료: {len(state_after_market.get('references', []))}개")
+        
+        print("\n" + "="*60)
+        print("STEP 2: 기업 분석")
+        print("="*60)
+        
+        company_agent = CompanyAnalyzerAgent()
+        
+        print("\n🔍 Company Analysis 시작...\n")
+        
+        final_state = company_agent.run(state_after_market)
         
         print("\n" + "=" * 60)
-        print("✅ 기업 분석 완료!")
+        print("✅ 전체 분석 완료!")
         print("=" * 60)
         
-        # 결과 출력
-        company_analyses = result.get("company_analysis", {})
+        company_analyses = final_state.get("company_analysis", {})
         
         for company, analysis in company_analyses.items():
             print(f"\n{'='*60}")
@@ -59,20 +73,19 @@ def main():
             print(analysis.get("summary_analysis", "N/A"))
             print()
         
-        # JSON 파일로 저장
-        output_file = "company_analysis_result.json"
+        output_file = "integrated_analysis_result.json"
         with open(output_file, 'w', encoding='utf-8') as f:
-            # 저장할 데이터 준비
             result_to_save = {
+                "market_research": final_state.get("market_research", {}),
+                "companies": final_state.get("companies", []),
                 "company_analysis": company_analyses,
-                "company_analysis_done": result.get("company_analysis_done", False)
+                "references": final_state.get("references", []),
+                "market_research_done": final_state.get("market_research_done", False),
+                "company_analysis_done": final_state.get("company_analysis_done", False)
             }
             json.dump(result_to_save, f, ensure_ascii=False, indent=2)
         
         print(f"\n💾 결과 저장: {output_file}")
-        
-        # 참고: 실제로는 벡터 DB도 저장 가능
-        # agent.rag_tool.save_vectorstore("./vectorstore")
         
     except Exception as e:
         print(f"\n❌ 에러 발생: {e}")
