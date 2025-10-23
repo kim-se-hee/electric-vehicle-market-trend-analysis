@@ -133,46 +133,31 @@
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      User Request                            │
-│            "전기차 시장 동향과 주요 기업 분석해줘"           │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-            ┌──────────────────────┐
-            │  Supervisor Agent    │
-            │  (작업 조율 및 분배) │
-            └──────────┬───────────┘
-                       │
-       ┌───────────────┼───────────────┐
-       │               │               │
-       ▼               ▼               ▼
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│  Market     │ │  Company    │ │   Stock     │
-│ Researcher  │ │  Analyzer   │ │  Analyzer   │
-│             │ │             │ │             │
-│ Web Search  │ │ Agentic RAG │ │             │
-└──────┬──────┘ └──────┬──────┘ └──────┬──────┘
-       │               │               │
-       └───────────────┼───────────────┘
-                       │
-                       ▼
-            ┌──────────────────────┐
-            │  Chart Generator     │
-            │  matplotlib/plotly   │
-            └──────────┬───────────┘
-                       │
-                       ▼
-            ┌──────────────────────┐
-            │  Report Compiler     │
-            │  PDF Generation      │
-            └──────────┬───────────┘
-                       │
-                       ▼
-            ┌──────────────────────┐
-            │   Final PDF Report   │
-            └──────────────────────┘
+```mermaid
+graph TD
+    START([사용자 쿼리]) --> SUPERVISOR{Supervisor Agent쿼리 분석 및다음 Agent 결정}
+
+    SUPERVISOR -->|시장 조사 필요| MARKET[Market_Researcher전기차 시장 트렌드 조사Web Search]
+    SUPERVISOR -->|기업 분석 필요| COMPANY[Company_Analyzer주요 기업 사업 전략 분석Agentic RAG]
+    SUPERVISOR -->|주가 분석 필요| STOCK[Stock_Analyzer주가/재무 데이터 분석yfinance API]
+    SUPERVISOR -->|차트 생성 필요| CHART[Chart_Generator데이터 시각화matplotlib/plotly]
+    SUPERVISOR -->|리포트 작성 필요| REPORT[Report_CompilerPDF 리포트 생성ReportLab]
+    SUPERVISOR -->|작업 완료| END([최종 결과물 반환])
+
+    MARKET -->|결과 State 저장| SUPERVISOR
+    COMPANY -->|결과 State 저장| SUPERVISOR
+    STOCK -->|결과 State 저장| SUPERVISOR
+    CHART -->|결과 State 저장| SUPERVISOR
+    REPORT -->|결과 State 저장| SUPERVISOR
+
+    style START fill:#e1f5e1
+    style END fill:#ffe1e1
+    style SUPERVISOR fill:#fff4e1,stroke:#ff9800,stroke-width:3px
+    style MARKET fill:#e3f2fd
+    style COMPANY fill:#e3f2fd
+    style STOCK fill:#e3f2fd
+    style CHART fill:#e3f2fd
+    style REPORT fill:#e3f2fd
 ```
 
 ## Directory Structure
