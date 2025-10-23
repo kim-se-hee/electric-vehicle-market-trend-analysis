@@ -52,6 +52,14 @@ MARKET_SYNTHESIS_PROMPT = """
     "summary": "시장 전체 요약 (3-5문장, 현재 상황과 전망 포함)",
     "market_size": "현재 시장 규모 (예: 1.2조 달러)",
     "growth_rate": "예상 성장률 (예: 12% YoY, 근거 포함)",
+    "key_companies": [
+        "Tesla",
+        "BYD",
+        "Samsung SDI",
+        "CATL",
+        "LG Energy Solution",
+        "Panasonic"
+    ],
     "key_trends": [
         {{
             "title": "트렌드 제목",
@@ -70,11 +78,18 @@ MARKET_SYNTHESIS_PROMPT = """
     "battery_supply_chain": "리튬 배터리 공급망 현황 요약 (2-3문장)"
 }}
 
+주요 기업(key_companies) 추출 규칙:
+- 전기차 제조사(OEM): Tesla, BYD, Ford, Volkswagen, BMW, Li Auto, XPeng, Rivian, General Motors 등
+- 배터리 제조사: CATL, LG Energy Solution, Samsung SDI, Panasonic, TSMC 등
+- 문서에서 구체적으로 언급된 기업만 포함
+- 최대 10개까지만 선정
+- 영문 정식 명칭 사용 (예: "LG에너지솔루션" → "LG Energy Solution")
+
 중요:
 - 문서에 명시된 구체적인 수치와 근거를 포함할 것
 - 출처가 불명확한 정보는 제외할 것
 - 트렌드는 3-5개, 리스크는 2-3개로 제한
-- 모든 내용은 한국어로 작성
+- 모든 내용은 한국어로 작성 (단, key_companies는 영문)
 """
 
 TREND_EXTRACTION_PROMPT = """

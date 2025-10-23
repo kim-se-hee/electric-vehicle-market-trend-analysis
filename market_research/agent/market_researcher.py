@@ -74,9 +74,11 @@ class MarketResearcherAgent(BaseAgent):
             
             return {
                 "market_research": output.dict(),
+                "companies": output.key_companies,  # ← 추가됨!
                 "references": output.sources,
                 "messages": [HumanMessage(
                     content=f"시장 조사를 완료했습니다. "
+                            f"{len(output.key_companies)}개 주요 기업, "
                             f"{len(output.key_trends)}개 주요 트렌드, "
                             f"{len(output.risks)}개 리스크 요인을 발견했습니다.",
                     name=self.name
@@ -160,6 +162,7 @@ class MarketResearcherAgent(BaseAgent):
                 "summary": response.content[:500],
                 "market_size": "N/A",
                 "growth_rate": "N/A",
+                "key_companies": [],
                 "key_trends": [],
                 "opportunities": [],
                 "risks": [],
@@ -178,6 +181,7 @@ class MarketResearcherAgent(BaseAgent):
             summary=analysis.get('summary', ''),
             market_size=analysis.get('market_size'),
             growth_rate=analysis.get('growth_rate', 'N/A'),
+            key_companies=analysis.get('key_companies', []),  # ← 추가됨!
             key_trends=analysis.get('key_trends', []),
             opportunities=analysis.get('opportunities', []),
             risks=analysis.get('risks', []),
