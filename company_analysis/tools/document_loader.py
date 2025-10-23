@@ -9,7 +9,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from common.config.settings import settings
 import logging
+from dotenv import load_dotenv
 
+# 환경변수 로드
+load_dotenv()
 
 class DocumentLoader:
     """기업 관련 문서 수집"""

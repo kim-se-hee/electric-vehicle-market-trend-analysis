@@ -8,6 +8,9 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from company_analysis.agent.company_analyzer import CompanyAnalyzerAgent
 import json
 
